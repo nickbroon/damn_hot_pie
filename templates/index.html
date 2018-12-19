@@ -1,40 +1,55 @@
-
 <!DOCTYPE html>
 <html>
-<head>
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
-	<script src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
-	<script src="https://d14fo0winaifog.cloudfront.net/plotly-basic.js"></script>
+  <head>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  </head>
+  <body>
+  </body>
+  <script>
+	var WIDTH_IN_PERCENT_OF_PARENT = 90,
+            HEIGHT_IN_PERCENT_OF_WIDTH = 50;
 
-</head>
-<body>
-	<div>
-<div id="tester" style="width:600px;height:250px;"></div>
-</div>
-</body>
-	<script>
+	var gd3 = Plotly.d3.select('body')
+	    .append('div')
+	    .style({
+	       width: WIDTH_IN_PERCENT_OF_PARENT + '%',
+	       'margin-left': (100 - WIDTH_IN_PERCENT_OF_PARENT) / 2 + '%',
+
+               height: HEIGHT_IN_PERCENT_OF_WIDTH + 'vw',
+               'margin-top': 10 + 'vh'
+            });
+
+	var gd = gd3.node();
+
 	Things = [];
 	x_data = [];
 	temperature_data = [];
 	humidity_data = [];
-	$.getJSON("{{request.url_root}}data/", function(data){ Things = data;
-	for (var i = 0; i < Things.length; i++) {
-		x_data.push(Things[i].date);
-		temperature_data.push(Things[i].temperature);
-		humidity_data.push(Things[i].humidity);
-	};
-});
-	var layout = {
-		margin: { t: 0 },
-		xaxis: {autorange: true},
-  		yaxis: {autorange: true}
-	};
-		
-	$(document).ready(function(){
-		d = [{x: x_data,y: temperature_data },{x: x_data,y: humidity_data }];
-	TESTER = document.getElementById('tester');
-	Plotly.plot( TESTER, d, layout);
 
-	})
-</script>
+	Plotly.d3.json("{{request.url_root}}data/",
+	               function(data){ Things = data;
+	                   for (var i = 0; i < Things.length; i++) {
+		                   x_data.push(Things[i].date);
+		                   temperature_data.push(Things[i].temperature);
+		                   humidity_data.push(Things[i].humidity);
+		           };
+
+		           var layout = {
+		                margin: { t: 0 },
+		                xaxis: {autorange: true},
+		                yaxis: {title: 'Celsius', side: 'right'},
+		                yaxis2: {title: '% r.H', overlaying: 'y', side: 'left'}
+		           };
+
+		           d = [{x: x_data, y: temperature_data, name: 'Temperature'},
+		                {x: x_data, y: humidity_data, name: 'Humidity', yaxis: 'y2' }];
+
+		           Plotly.newPlot(gd, d, layout);
+
+		      });
+
+	window.onresize = function() {
+	    Plotly.Plots.resize(gd);
+	};
+    </script>
 </html>

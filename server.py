@@ -4,12 +4,12 @@ import json
 from optparse import OptionParser
 app = Flask(__name__)
 
-query_length_limit = 100
+query_length_limit = 2000
 
 def add_parser_options(parser):
 	parser.add_option('--port', dest="port",action="store", type="int", default=8080, help="port [default: %default]")
 	parser.add_option('--host', dest="host", action="store", type="str", default='0.0.0.0', help="host [default: %default]")
-	parser.add_option('-n',action="store", type="int", default=100, help="max limit of rows aviable by /data/ [default: %default]")
+	parser.add_option('-n',action="store", type="int", default=2000, help="max limit of rows aviable by /data/ [default: %default]")
 	return parser
 
 def get_records(count=None):

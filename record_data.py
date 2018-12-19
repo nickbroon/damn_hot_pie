@@ -1,24 +1,18 @@
 import time
 from datetime import datetime
-import Adafruit_DHT as Sensor
+import bme680
 import threading
 from model import db, DHTRecord
 from optparse import OptionParser
 
-sensor_args = {	'11': Sensor.DHT11, '22': Sensor.DHT22, '2302': Sensor.AM2302}
-
 def add_parser_options(parser):
 	parser.add_option('-p', action="store_true", default=False, help="print every record to STDOUT [default: %default]")
 	parser.add_option('-t', action="store", type="int", default=15, help="time interval in minutes to request readout from sensor [default: %default]")
-	parser.add_option('--pin', dest="pin", action="store", type="int", default=4, help="data pin connected to sensor [default: %default]")
-	parser.add_option('-s', action="store", type="str", default='11', help="number of DHT sensor in use (supported: 11, 22, 2302) [default: %default]")
 	return parser
 
 
 class SensorDatabase(threading.Thread):
-	def __init__(self, pin, sensor_number, minutes_interval, print_to_stdout):
-		self.pin = pin
-		self.sensor_number = sensor_number
+	def __init__(self, minutes_interval, print_to_stdout):
 		self.minutes_interval = minutes_interval
 		self.print_to_stdout = print_to_stdout
 		threading.Thread.__init__(self)
@@ -30,20 +24,26 @@ class SensorDatabase(threading.Thread):
 		db.session.commit()
 
 	def run(self):
+
+                sensor = bme680.BME680()
+                sensor.set_humidity_oversample(bme680.OS_2X)
+                sensor.set_pressure_oversample(bme680.OS_4X)
+                sensor.set_temperature_oversample(bme680.OS_8X)
+                sensor.set_filter(bme680.FILTER_SIZE_3)
+                sensor.set_gas_status(bme680.DISABLE_GAS_MEAS)
+                sensor.set_temp_offset(-4.9)
+
 		while True:
-			humidity, temperature = Sensor.read_retry(self.sensor_number, self.pin)
-			data = humidity, temperature, datetime.now()
-			self.record_to_database(data)
-			one_minute = 60
-			sleep_time = self.minutes_interval * one_minute
-			if self.print_to_stdout:
-				print data
-			time.sleep(sleep_time)
+                        if sensor.get_sensor_data():
+			        data = sensor.data.humidity, sensor.data.temperature, datetime.now()
+			        self.record_to_database(data)
+			        if self.print_to_stdout:
+				        print data
+			time.sleep(self.minutes_interval * 60)
 
 if __name__ == "__main__":
 	parser = OptionParser()
 	praser = add_parser_options(parser)
 	opts, args = parser.parse_args()
-	sensor = sensor_args[opts.s]
-	sd = SensorDatabase(opts.pin, sensor, opts.t, opts.p)
+	sd = SensorDatabase(opts.t, opts.p)
 	sd.run()
