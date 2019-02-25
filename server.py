@@ -1,8 +1,7 @@
 from flask import Flask, render_template
-from model import DHTRecord
+from model import app, DHTRecord
 import json
 from optparse import OptionParser
-app = Flask(__name__)
 
 query_length_limit = 2000
 
